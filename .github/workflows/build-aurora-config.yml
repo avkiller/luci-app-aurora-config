@@ -28,7 +28,9 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: luci-app-aurora-config-${{ steps.slug.outputs.ref }}-${{ steps.build.outputs.pkg_type }}
-          path: out/*.[ai]pk
+          path: |
+            out/luci-app-aurora-config_*.[ai]pk
+            out/luci-i18n-aurora-config-zh-cn_*.[ai]pk
 
         env:
           USIGN_KEY: ${{ secrets.USIGN_PRIVATE_KEY }}
