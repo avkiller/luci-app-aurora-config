@@ -1,0 +1,35 @@
+name: LuCI App Aurora Config Build & Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build luci-app-aurora-config ${{ matrix.sdk }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ["24.10.6", "25.12.5"]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - id: slug
+        run: echo "ref=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+      - id: build
+        uses: avkiller/build-luci-package@master
+        with:
+          sdk: ${{ matrix.sdk }}
+          packages: '[{"pkg":"luci-app-aurora-config","path":".","langs":["zh-cn","zh-tw","de","es","fr","id","it","ja","ko","nl","pl","ru","tr","uk","vi"]}]'
+      - uses: actions/upload-artifact@v6
+        with:
+          name: luci-app-aurora-config-${{ steps.slug.outputs.ref }}-${{ steps.build.outputs.pkg_type }}
+          path: out/*.[ai]pk
+
+        env:
+          USIGN_KEY: ${{ secrets.USIGN_PRIVATE_KEY }}
+          APK_KEY: ${{ secrets.APK_PRIVATE_KEY }}
