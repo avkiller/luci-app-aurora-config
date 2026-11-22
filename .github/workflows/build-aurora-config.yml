@@ -24,7 +24,7 @@ jobs:
         uses: avkiller/build-luci-package@master
         with:
           sdk: ${{ matrix.sdk }}
-          packages: '[{"pkg":"luci-app-aurora-config","path":".","langs":["zh-cn","zh-tw","de","es","fr","id","it","ja","ko","nl","pl","ru","tr","uk","vi"]}]'
+          packages: '[{"pkg":"luci-app-aurora-config","path":".","langs":["zh-cn"]}]'
       - uses: actions/upload-artifact@v6
         with:
           name: luci-app-aurora-config-${{ steps.slug.outputs.ref }}-${{ steps.build.outputs.pkg_type }}
