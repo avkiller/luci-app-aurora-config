@@ -1,4 +1,4 @@
-name: LuCI App Aurora Config Build & Release
+name: LuCI App Aurora Config Build for avkiller
 
 on:
   workflow_dispatch:
