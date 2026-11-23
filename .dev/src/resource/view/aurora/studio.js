@@ -15,7 +15,7 @@ const CONFIG_IMPORT_PATH = "/tmp/aurora_config_import.tmp";
 const themeFormField = (key) =>
   document.getElementById("widget.cbid.aurora.theme." + key);
 
-const FEED_HOST = "openwrt.eamonxg.fun";
+const FEED_HOST = "";
 const MANIFEST_URL = `https://${FEED_HOST}/manifest.json`;
 const MANIFEST_CACHE_KEY = "aurora.manifest";
 

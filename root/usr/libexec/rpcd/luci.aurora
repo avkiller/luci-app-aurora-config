@@ -29,13 +29,13 @@ readonly FONT_PRESETS_FILE="/usr/share/aurora/font-presets.conf"
 readonly IMPORT_CONFIG_TMP="/tmp/aurora_config_import.tmp"
 readonly EXPORT_CONFIG_TMP="/tmp/aurora_config_export.conf"
 readonly COLOR_TOKENS_FILE="/usr/share/aurora/color-tokens.conf"
-readonly HUB_BASE="https://themes.eamonxg.fun"
-readonly AURORA_FEED_HOST="openwrt.eamonxg.fun"
+readonly HUB_BASE=""
+readonly AURORA_FEED_HOST="aurora.avkiller.top"
 # opkg names a trusted key file after its keynum: the hex of bytes 3-10 of the
 # base64-decoded key line. Computed once with openwrt-cloud's usign-fpr.sh so
 # devices need no usign binary. Rotating the key means changing this too.
-readonly AURORA_FEED_FPR="82d72f5ededb6163"
-readonly AURORA_FEED_CHANNEL="snapshots"
+readonly AURORA_FEED_FPR="e6089a2eccd37d83"
+readonly AURORA_FEED_CHANNEL="apk"
 readonly AURORA_FEED_KEYS="/usr/share/aurora/feed"
 readonly DEVICE_DIR="/etc/aurora"
 readonly HUB_JOB_PATH="/tmp/aurora_hub_jobs"
@@ -2681,12 +2681,12 @@ aurora_add_feed() {
 		mkdir -p /etc/apk/keys /etc/apk/repositories.d 2>/dev/null || {
 			aurora_feed_error "cannot create the apk directories"; return
 		}
-		cp "$AURORA_FEED_KEYS/eamonxg.pem" /etc/apk/keys/eamonxg.pem || {
+		cp "$AURORA_FEED_KEYS/avkiller.pem" /etc/apk/keys/avkiller.pem || {
 			aurora_feed_error "cannot install the signing key"; return
 		}
 		aurora_drop_feed_lines /etc/apk/repositories.d/customfeeds.list \
 			"https://$AURORA_FEED_HOST/"
-		echo "https://$AURORA_FEED_HOST/$AURORA_FEED_CHANNEL/apk/packages.adb" \
+		echo "https://$AURORA_FEED_HOST/$AURORA_FEED_CHANNEL/packages.adb" \
 			>> /etc/apk/repositories.d/customfeeds.list
 		apk update >/dev/null 2>&1 && refreshed="1"
 		;;
@@ -2694,11 +2694,11 @@ aurora_add_feed() {
 		mkdir -p /etc/opkg/keys 2>/dev/null || {
 			aurora_feed_error "cannot create /etc/opkg/keys"; return
 		}
-		cp "$AURORA_FEED_KEYS/eamonxg.pub" "/etc/opkg/keys/$AURORA_FEED_FPR" || {
+		cp "$AURORA_FEED_KEYS/avkiller.pub" "/etc/opkg/keys/$AURORA_FEED_FPR" || {
 			aurora_feed_error "cannot install the signing key"; return
 		}
-		aurora_drop_feed_lines /etc/opkg/customfeeds.conf "src/gz eamonxg "
-		echo "src/gz eamonxg https://$AURORA_FEED_HOST/$AURORA_FEED_CHANNEL/opkg" \
+		aurora_drop_feed_lines /etc/opkg/customfeeds.conf "src/gz avkiller_aurora "
+		echo "src/gz avkiller_aurora https://aurora.avkiller.top/ipk" \
 			>> /etc/opkg/customfeeds.conf
 		opkg update >/dev/null 2>&1 && refreshed="1"
 		;;

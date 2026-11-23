@@ -9,6 +9,7 @@ const INBOX_HASH = "#inbox";
 const ICON_CLASS = "aurora-inbox-icon";
 const INDICATOR = '#indicators span[data-indicator="' + INDICATOR_ID + '"].' + ICON_CLASS;
 
+const HUB_NET_DISABLED = true;
 // Only for themes that hide indicator text and paint ::before by indicator
 // name (Aurora, shadcn): there an unknown name is a solid square. Themes that
 // show the text keep LuCI's plain "Inbox 3".
@@ -27,8 +28,12 @@ const openInbox = () => {
   window.location.href = L.url(INBOX_PATH) + INBOX_HASH;
 };
 
-const update = () =>
-  Promise.all([L.require("utils.notices"), L.require("utils.hub-api"), L.require("ui")]).then(
+const update = () => {
+  if (HUB_NET_DISABLED) {                       // ★ 短路：只隐藏角标
+    const ui = L.require("ui");
+    return Promise.resolve().then(() => ui.hideIndicator(INDICATOR_ID)).catch(() => {});
+  }
+  return Promise.all([L.require("utils.notices"), L.require("utils.hub-api"), L.require("ui")]).then(
     ([notices, hubApi, ui]) => {
       const count = notices.badgeCount(
         hubApi.noticesCache.getStale(),
@@ -54,21 +59,25 @@ const update = () =>
       }
     },
   );
+};
 
-const run = () =>
-  Promise.all([L.require("utils.notices"), L.require("utils.hub-api")])
+const run = () => {
+  if (HUB_NET_DISABLED) return Promise.resolve().then(update); // ★ 不轮询 hub
+  return Promise.all([L.require("utils.notices"), L.require("utils.hub-api")])
     .then(([notices, hubApi]) =>
       notices.isDue(hubApi.noticesCheckedAt(), Date.now())
         ? hubApi.refreshNotices().catch(() => null)
         : null,
     )
     .then(update);
+};
 
 return baseclass.extend({
   INBOX_HASH: INBOX_HASH,
 
   __init__() {
     if (!L.env.sessionid) return;
+    if (HUB_NET_DISABLED) return;               // ★ 不启动角标链路
     document.addEventListener(
       "luci-loaded",
       () =>

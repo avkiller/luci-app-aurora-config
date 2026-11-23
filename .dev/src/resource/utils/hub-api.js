@@ -10,16 +10,20 @@ const INBOX_READ_KEY = "aurora.hub.inboxRead";
 const INBOX_DONE_KEY = "aurora.hub.inboxDone";
 const NOTICES_CHECKED_KEY = "aurora.hub.noticesChecked";
 
-const HUB_BASE = "https://themes.eamonxg.fun";
+const HUB_BASE = "";
 const HUB_TIMEOUT_MS = 15000;
 const HUB_NOT_FOUND = "invalid_id";
 
 // 本客户端读得懂的最高 payload schema。升 schema 时只改这一处。
 const CLIENT_SCHEMA = 1;
+// ★ 总开关：true = 全部联网功能停用
+const HUB_NET_DISABLED = true;
+const OFFLINE_ENVELOPE = { result: 1, error: "hub_unreachable" };
 
 // 浏览器直连 hub 的读路径。返回包络刻意与 rpcd 保持一致
 // （{result:0,data} / {result:1,error}），marketplace.js 无需感知传输方式的变化。
 const hubFetch = (path) => {
+  if (HUB_NET_DISABLED) return Promise.resolve(OFFLINE_ENVELOPE);  // ← 新增
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), HUB_TIMEOUT_MS);
   return fetch(HUB_BASE + path, {
@@ -47,8 +51,9 @@ const hubFetch = (path) => {
 //
 // 用 XHR 而不是 fetch,只为了 upload.onprogress:一张 1.2MB 的图在慢上行的
 // 线路上要传十几秒,没有进度条的等待会被当成卡死。
-const putAssetBytes = (url, ticket, blob, onProgress) =>
-  new Promise((resolve) => {
+const putAssetBytes = (url, ticket, blob, onProgress) => {
+  if (HUB_NET_DISABLED) return Promise.resolve(false);  
+  return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url, true);
     xhr.setRequestHeader("Authorization", "Bearer " + ticket);
@@ -62,6 +67,7 @@ const putAssetBytes = (url, ticket, blob, onProgress) =>
     xhr.ontimeout = () => resolve(false);
     xhr.send(blob);
   });
+};
 
 // hub 的资产 url 是相对路径("/assets/{id}/{kind}"),和详情接口一直以来的
 // 返回一致 —— 拼接 base 是客户端的活,这样缓存下来的列表里不会烙进主机名。
@@ -143,6 +149,7 @@ return baseclass.extend({
   CLIENT_SCHEMA: CLIENT_SCHEMA,
 
   callHubList(sort, page) {
+    if (HUB_NET_DISABLED) return Promise.resolve(OFFLINE_ENVELOPE); // ★ 短路
     const safeSort = sort === "new" ? "new" : "hot";
     const safePage = Number.isInteger(page) && page > 0 ? page : 1;
     return hubFetch(
@@ -156,6 +163,7 @@ return baseclass.extend({
   },
 
   callHubNotices() {
+    if (HUB_NET_DISABLED) return Promise.resolve(OFFLINE_ENVELOPE); // ★ 短路
     return hubFetch("/api/v1/notices?theme=aurora&schema=" + CLIENT_SCHEMA).then((res) =>
       res.error === HUB_NOT_FOUND ? { result: 0, data: { notices: [] } } : res,
     );
@@ -193,6 +201,7 @@ return baseclass.extend({
   // 进来。不传则只在 feed 里有 creators 通知、或缓存显示本机发过作品时才调
   // hub_me（路由器 → hub，约 1 s）。
   refreshNotices(options) {
+    if (HUB_NET_DISABLED) return Promise.resolve(null); // ★ 短路
     const opts = options || {};
     const supplied =
       opts.me === undefined ? null : Promise.resolve(opts.me).catch(() => null);
@@ -234,6 +243,7 @@ return baseclass.extend({
   },
 
   callHubGet(id) {
+    if (HUB_NET_DISABLED) return Promise.resolve(OFFLINE_ENVELOPE); // ★ 短路
     if (!/^[A-Za-z0-9]+$/.test(String(id || ""))) {
       return Promise.resolve({ result: 1, error: HUB_NOT_FOUND });
     }
@@ -288,6 +298,7 @@ return baseclass.extend({
   // 发布一整套配置:路由器建草稿并拿票据 -> 浏览器把字节直接送到 hub ->
   // 路由器提交。返回的信封与其它 hub 调用一致({result:0,...})。
   publishCurrentConfig(options) {
+    if (HUB_NET_DISABLED) return Promise.resolve(OFFLINE_ENVELOPE);  // ← 新增
     const opts = options || {};
     const report = (info) => {
       if (typeof opts.onProgress === "function") opts.onProgress(info);
