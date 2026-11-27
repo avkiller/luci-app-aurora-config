@@ -89,6 +89,7 @@ return baseclass.extend({
   },
 
   update() {
+    if (HUB_NET_DISABLED) return Promise.resolve();
     return Promise.resolve().then(update).catch(() => {});
   },
 });

@@ -2379,7 +2379,7 @@ return view.extend({
 
     const inboxChanged = () => {
       renderTabLabel(INBOX_TAB);
-      inboxIndicator.update();
+      // inboxIndicator.update();
       if (state.tab === "inbox") renderContent();
     };
 
@@ -2652,9 +2652,8 @@ return view.extend({
 
     const onInboxHash = () => {
       if (rootEl.isConnected) inboxMounted = true;
-      else if (inboxMounted) return window.removeEventListener("hashchange", onInboxHash);
-      if (window.location.hash === inboxIndicator.INBOX_HASH && state.tab !== "inbox")
-        selectTab("inbox");
+      // if (window.location.hash === inboxIndicator.INBOX_HASH && state.tab !== "inbox")
+      //   selectTab("inbox");
     };
     window.addEventListener("hashchange", onInboxHash);
 
@@ -4047,6 +4046,7 @@ return view.extend({
       label: _("Inbox"),
       badge: () => notices.unreadCount(inboxItems()),
     };
+    void INBOX_TAB;
 
     const TABS = [
       { key: "all", label: _("All") },
@@ -4060,7 +4060,7 @@ return view.extend({
         label: _("Mine"),
         count: () => myShares.length + (buildMineModel() ? 1 : 0),
       },
-      INBOX_TAB,
+      // INBOX_TAB,   // ★ Inbox 已禁用：不渲染按钮
     ];
 
     const renderTabLabel = (tab) => {
@@ -4276,19 +4276,21 @@ return view.extend({
     };
 
     const selectTab = (key) => {
+      // ★ Inbox 已禁用：任何来源（首帧 hash、onInboxHash、外部调用、点标签）
+      // 走到这里都会被拉回「全部」，Inbox 在路由层就不存在。
+      if (key === "inbox") key = "all";
       state.tab = key;
       TABS.forEach((tab) =>
         tabButtons[tab.key].classList.toggle("active", tab.key === key),
       );
-      searchInput.style.display = key === "inbox" ? "none" : "";
+      searchInput.style.display = "";
       // 顶栏指示器靠这个 hash 把人送到 Inbox;离开 Inbox 就摘掉它,否则再点一次
       // 指示器时地址没变,hashchange 不会来。
-      const hash = key === "inbox" ? inboxIndicator.INBOX_HASH : "";
-      if (window.location.hash !== hash && window.history && window.history.replaceState)
+      if (window.location.hash && window.history && window.history.replaceState)
         window.history.replaceState(
           window.history.state,
           "",
-          window.location.pathname + window.location.search + hash,
+          window.location.pathname + window.location.search,
         );
       renderContent();
     };
@@ -4334,13 +4336,14 @@ return view.extend({
     // 已发布的作品,和"拿不到数据"是两回事。
     applyMe(hubApi.meCache.getStale());
     // 从工作台带着发布意图过来,直接落在"我的分享"上,不必再点一次标签。
-    selectTab(
-      shareIntent
-        ? "mine"
-        : window.location.hash === inboxIndicator.INBOX_HASH
-          ? "inbox"
-          : "all",
+    // ★ Inbox 已禁用：首帧不再因 URL 里的 INBOX_HASH 落到 Inbox，
+    if (window.location.hash && window.history && window.history.replaceState)
+      window.history.replaceState(
+        window.history.state,
+        "",
+        window.location.pathname + window.location.search,
     ); // 末行已 renderContent(),首帧在此成型
+    selectTab(shareIntent ? "mine" : "all"); // 末行已 renderContent(),首帧在此成型
 
     [
       styleEl,
